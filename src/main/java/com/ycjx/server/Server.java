@@ -1,6 +1,7 @@
 package com.ycjx.server;
 
 import com.ycjx.server.handler.FirstServerHandler;
+import com.ycjx.server.handler.ServerHandler;
 import io.netty.bootstrap.ServerBootstrap;
 import io.netty.channel.ChannelFuture;
 import io.netty.channel.ChannelInitializer;
@@ -37,7 +38,7 @@ public class Server {
                 .childHandler(new ChannelInitializer<NioSocketChannel>() {
                     @Override
                     protected void initChannel(NioSocketChannel nioSocketChannel) {
-                        nioSocketChannel.pipeline().addLast(new FirstServerHandler());
+                        nioSocketChannel.pipeline().addLast(new ServerHandler());
                     }
                 })
                 .childAttr(AttributeKey.newInstance("oo"), "oo")

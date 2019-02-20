@@ -1,13 +1,23 @@
 package com.ycjx.client;
 
+import com.ycjx.bean.MessageRequestPacket;
+import com.ycjx.client.handler.ClientHandler;
 import com.ycjx.client.handler.FirstClientHandler;
+import com.ycjx.utils.LoginUtil;
+import com.ycjx.utils.PacketEncodeDecode;
 import io.netty.bootstrap.Bootstrap;
+import io.netty.buffer.ByteBuf;
+import io.netty.buffer.ByteBufAllocator;
+import io.netty.channel.Channel;
+import io.netty.channel.ChannelFuture;
 import io.netty.channel.ChannelInitializer;
 import io.netty.channel.ChannelOption;
 import io.netty.channel.nio.NioEventLoopGroup;
 import io.netty.channel.socket.SocketChannel;
 import io.netty.channel.socket.nio.NioSocketChannel;
 
+import java.nio.charset.Charset;
+import java.util.Scanner;
 import java.util.concurrent.TimeUnit;
 
 /**
@@ -22,8 +32,8 @@ public class Client {
 
     public static void main(String[] args) {
         NioEventLoopGroup workGroup = new NioEventLoopGroup();
-
         Bootstrap bootstrap = new Bootstrap();
+
         bootstrap.group(workGroup)
                 .channel(NioSocketChannel.class)
                 .option(ChannelOption.CONNECT_TIMEOUT_MILLIS, 5000)
@@ -32,11 +42,11 @@ public class Client {
                 .handler(new ChannelInitializer<SocketChannel>() {
                     @Override
                     protected void initChannel(SocketChannel socketChannel) {
-                        socketChannel.pipeline().addLast(new FirstClientHandler());
+                        socketChannel.pipeline().addLast(new ClientHandler());
                     }
                 });
         //建立连接
-        connet(bootstrap, "127.0.0.1", 8000, MAX_RETRY);
+        connet(workGroup, bootstrap, "127.0.0.1", 8000, MAX_RETRY);
     }
 
 
@@ -48,10 +58,21 @@ public class Client {
      * @param port
      * @param retry     重连次数
      */
-    private static void connet(Bootstrap bootstrap, String host, int port, int retry) {
+    private static void connet(NioEventLoopGroup workGroup, Bootstrap bootstrap, String host, int port, int retry) {
         bootstrap.connect(host, port).addListener(future -> {
             if (future.isSuccess()) {
+                Channel channel = ((ChannelFuture) future).channel();
                 System.out.println("连接成功！");
+
+                NioSocketChannel channel2 = new NioSocketChannel();
+                workGroup.register(channel2);
+                byte[] bytes = "这是第二个channel".getBytes(Charset.forName("utf-8"));
+
+                ByteBuf buffer = ByteBufAllocator.DEFAULT.buffer();
+                buffer.writeBytes(bytes);
+                channel2.writeAndFlush(buffer);
+                startConsoleThread(channel);
+
             } else {
                 if (retry == 0) {
                     System.err.println("放弃连接！");
@@ -59,9 +80,26 @@ public class Client {
                 int order = (MAX_RETRY - retry) + 1;
                 int delay = 1 << order;
                 bootstrap.config().group().schedule(() -> {
-                    connet(bootstrap, host, port, retry - 1);
+                    connet(workGroup,bootstrap, host, port, retry - 1);
                 }, delay, TimeUnit.SECONDS);
             }
         });
+    }
+
+    private static void startConsoleThread(Channel channel) {
+        new Thread(() -> {
+            while (!Thread.interrupted()) {
+                if (LoginUtil.hasLogin(channel)) {
+                    System.out.println("输入消息发送至服务端: ");
+                    Scanner sc = new Scanner(System.in);
+                    String line = sc.nextLine();
+
+                    MessageRequestPacket packet = new MessageRequestPacket();
+                    packet.setMessage(line);
+                    ByteBuf byteBuf = PacketEncodeDecode.INSTANCE.encode(packet);
+                    channel.writeAndFlush(byteBuf);
+                }
+            }
+        }).start();
     }
 }
