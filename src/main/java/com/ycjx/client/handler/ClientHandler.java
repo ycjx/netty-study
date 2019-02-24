@@ -4,7 +4,7 @@ import com.ycjx.bean.LoginRequestPacket;
 import com.ycjx.bean.LoginResponsePacket;
 import com.ycjx.bean.Packet;
 import com.ycjx.utils.LoginUtil;
-import com.ycjx.utils.PacketEncodeDecode;
+import com.ycjx.utils.PacketEncodeCodec;
 import io.netty.buffer.ByteBuf;
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.channel.ChannelInboundHandlerAdapter;
@@ -27,14 +27,14 @@ public class ClientHandler extends ChannelInboundHandlerAdapter {
         loginRequestPacket.setUserId(8978);
         loginRequestPacket.setUsername("ycjx");
         loginRequestPacket.setPassword("yay");
-        ByteBuf byteBuf = PacketEncodeDecode.INSTANCE.encode(loginRequestPacket);
+        ByteBuf byteBuf = PacketEncodeCodec.INSTANCE.encode(loginRequestPacket);
         ctx.channel().writeAndFlush(byteBuf);
     }
 
     @Override
     public void channelRead(ChannelHandlerContext ctx, Object msg) throws Exception {
         ByteBuf byteBuf = (ByteBuf) msg;
-        Packet packet = PacketEncodeDecode.INSTANCE.decode(byteBuf);
+        Packet packet = PacketEncodeCodec.INSTANCE.decode(byteBuf);
         if (packet instanceof LoginResponsePacket) {
             LoginResponsePacket loginResponsePacket = (LoginResponsePacket) packet;
             if (loginResponsePacket.isSuccess()) {

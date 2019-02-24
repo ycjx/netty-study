@@ -1,10 +1,10 @@
 package com.ycjx.client;
 
 import com.ycjx.bean.MessageRequestPacket;
-import com.ycjx.client.handler.ClientHandler;
-import com.ycjx.client.handler.FirstClientHandler;
+import com.ycjx.client.handler.LoginResponseHandle;
+import com.ycjx.client.handler.MessageResponesHandle;
 import com.ycjx.utils.LoginUtil;
-import com.ycjx.utils.PacketEncodeDecode;
+import com.ycjx.utils.PacketEncodeCodec;
 import io.netty.bootstrap.Bootstrap;
 import io.netty.buffer.ByteBuf;
 import io.netty.buffer.ByteBufAllocator;
@@ -42,7 +42,9 @@ public class Client {
                 .handler(new ChannelInitializer<SocketChannel>() {
                     @Override
                     protected void initChannel(SocketChannel socketChannel) {
-                        socketChannel.pipeline().addLast(new ClientHandler());
+                        socketChannel.pipeline().addLast(new PacketEncodeCodec())
+                                .addLast(new LoginResponseHandle())
+                                .addLast(new MessageResponesHandle());
                     }
                 });
         //建立连接
@@ -64,13 +66,13 @@ public class Client {
                 Channel channel = ((ChannelFuture) future).channel();
                 System.out.println("连接成功！");
 
-                NioSocketChannel channel2 = new NioSocketChannel();
-                workGroup.register(channel2);
-                byte[] bytes = "这是第二个channel".getBytes(Charset.forName("utf-8"));
-
-                ByteBuf buffer = ByteBufAllocator.DEFAULT.buffer();
-                buffer.writeBytes(bytes);
-                channel2.writeAndFlush(buffer);
+//                NioSocketChannel channel2 = new NioSocketChannel();
+//                workGroup.register(channel2);
+//                byte[] bytes = "这是第二个channel".getBytes(Charset.forName("utf-8"));
+//
+//                ByteBuf buffer = ByteBufAllocator.DEFAULT.buffer();
+//                buffer.writeBytes(bytes);
+//                channel2.writeAndFlush(buffer);
                 startConsoleThread(channel);
 
             } else {
@@ -80,7 +82,7 @@ public class Client {
                 int order = (MAX_RETRY - retry) + 1;
                 int delay = 1 << order;
                 bootstrap.config().group().schedule(() -> {
-                    connet(workGroup,bootstrap, host, port, retry - 1);
+                    connet(workGroup, bootstrap, host, port, retry - 1);
                 }, delay, TimeUnit.SECONDS);
             }
         });
@@ -96,7 +98,7 @@ public class Client {
 
                     MessageRequestPacket packet = new MessageRequestPacket();
                     packet.setMessage(line);
-                    ByteBuf byteBuf = PacketEncodeDecode.INSTANCE.encode(packet);
+                    ByteBuf byteBuf = PacketEncodeCodec.INSTANCE.encode(packet);
                     channel.writeAndFlush(byteBuf);
                 }
             }

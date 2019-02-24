@@ -1,17 +1,16 @@
 package com.ycjx.server;
 
-import com.ycjx.server.handler.FirstServerHandler;
-import com.ycjx.server.handler.ServerHandler;
+import com.ycjx.server.handler.LoginRequestHandler;
+import com.ycjx.server.handler.MessageRequestHandler;
+import com.ycjx.utils.PacketEncodeCodec;
 import io.netty.bootstrap.ServerBootstrap;
-import io.netty.channel.ChannelFuture;
 import io.netty.channel.ChannelInitializer;
 import io.netty.channel.ChannelOption;
 import io.netty.channel.nio.NioEventLoopGroup;
 import io.netty.channel.socket.nio.NioServerSocketChannel;
 import io.netty.channel.socket.nio.NioSocketChannel;
+import io.netty.handler.codec.LengthFieldBasedFrameDecoder;
 import io.netty.util.AttributeKey;
-import io.netty.util.concurrent.Future;
-import io.netty.util.concurrent.GenericFutureListener;
 
 /**
  * @author:yuxj
@@ -38,7 +37,12 @@ public class Server {
                 .childHandler(new ChannelInitializer<NioSocketChannel>() {
                     @Override
                     protected void initChannel(NioSocketChannel nioSocketChannel) {
-                        nioSocketChannel.pipeline().addLast(new ServerHandler());
+
+                                                            //基于长度的拆包 偏移量7 后四个字节为长度值，
+                        nioSocketChannel.pipeline().addLast(new LengthFieldBasedFrameDecoder(Integer.MAX_VALUE, 7, 4))
+                                .addLast(new PacketEncodeCodec())
+                                .addLast(new LoginRequestHandler())
+                                .addLast(new MessageRequestHandler());
                     }
                 })
                 .childAttr(AttributeKey.newInstance("oo"), "oo")

@@ -3,19 +3,21 @@ package com.ycjx.utils;
 import com.ycjx.bean.*;
 import io.netty.buffer.ByteBuf;
 import io.netty.buffer.ByteBufAllocator;
+import io.netty.channel.ChannelHandlerContext;
+import io.netty.handler.codec.ByteToMessageCodec;
 
-import java.util.Map;
+import java.util.List;
 
 /**
  * @author:yuxj
  * @descriptio
  * @create:2019/2/18 下午10:29
  */
-public class PacketEncodeDecode {
+public class PacketEncodeCodec extends ByteToMessageCodec<Packet> {
 
     private static final int MAGIC_NUMBER = 0x12345678;
 
-    public static final PacketEncodeDecode INSTANCE = new PacketEncodeDecode();
+    public static final PacketEncodeCodec INSTANCE = new PacketEncodeCodec();
 
 
     public ByteBuf encode(Packet packet) {
@@ -32,6 +34,45 @@ public class PacketEncodeDecode {
         byteBuf.writeInt(bytes.length);
         byteBuf.writeBytes(bytes);
         return byteBuf;
+    }
+
+    @Override
+    protected void encode(ChannelHandlerContext ctx, Packet msg, ByteBuf out) throws Exception {
+        //序列化java对象
+        byte[] bytes = Serializer.DEFAULT.serialize(msg);
+
+        //编码过程
+        out.writeInt(MAGIC_NUMBER);
+        out.writeByte(msg.getVersion());
+        out.writeByte(Serializer.DEFAULT.getSerializerAlgorithm());
+        out.writeByte(msg.getCommand());
+        out.writeInt(bytes.length);
+        out.writeBytes(bytes);
+    }
+
+    @Override
+    protected void decode(ChannelHandlerContext ctx, ByteBuf in, List<Object> out) throws Exception {
+        //跳过magic
+        in.skipBytes(4);
+        //跳过版本号
+        in.skipBytes(1);
+        //序列化算法标识
+        byte serializeAlgorithm = in.readByte();
+        //指令
+        byte command = in.readByte();
+        //数据包长度
+        int length = in.readInt();
+
+        byte[] bytes = new byte[length];
+        in.readBytes(bytes);
+
+        Class<? extends Packet> requestType = getRequestType(command);
+        Serializer serializer = getSerializer(serializeAlgorithm);
+
+        if (requestType != null && serializer != null) {
+            out.add(serializer.deserialize(requestType, bytes));
+        }
+
     }
 
     public Packet decode(ByteBuf byteBuf) {
@@ -72,6 +113,12 @@ public class PacketEncodeDecode {
         }
         if (command == Command.LOGIN_RESPONSE) {
             return LoginResponsePacket.class;
+        }
+        if (command == Command.MESSAGE_REQUEST) {
+            return MessageRequestPacket.class;
+        }
+        if (command == Command.MESSAGE_RESPONES) {
+            return MessageResponsePacket.class;
         }
         return null;
     }

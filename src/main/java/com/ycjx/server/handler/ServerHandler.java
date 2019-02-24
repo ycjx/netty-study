@@ -4,7 +4,7 @@ import com.ycjx.bean.LoginRequestPacket;
 import com.ycjx.bean.LoginResponsePacket;
 import com.ycjx.bean.MessageRequestPacket;
 import com.ycjx.bean.Packet;
-import com.ycjx.utils.PacketEncodeDecode;
+import com.ycjx.utils.PacketEncodeCodec;
 import io.netty.buffer.ByteBuf;
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.channel.ChannelInboundHandlerAdapter;
@@ -21,7 +21,7 @@ public class ServerHandler extends ChannelInboundHandlerAdapter {
         ByteBuf byteBuf = (ByteBuf) msg;
         ByteBuf byteBuf2 = byteBuf.copy();
 
-        Packet packet = PacketEncodeDecode.INSTANCE.decode(byteBuf);
+        Packet packet = PacketEncodeCodec.INSTANCE.decode(byteBuf);
         ByteBuf responseBuf;
         if (packet instanceof LoginRequestPacket) {
             LoginRequestPacket loginRequestPacket = (LoginRequestPacket) packet;
@@ -34,7 +34,7 @@ public class ServerHandler extends ChannelInboundHandlerAdapter {
                 loginResponsePacket.setSuccess(false);
                 loginResponsePacket.setReason("密码错误");
             }
-            responseBuf = PacketEncodeDecode.INSTANCE.encode(loginResponsePacket);
+            responseBuf = PacketEncodeCodec.INSTANCE.encode(loginResponsePacket);
             ctx.channel().writeAndFlush(responseBuf);
         }else if(packet instanceof MessageRequestPacket){
 
