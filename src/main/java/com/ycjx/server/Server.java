@@ -1,5 +1,6 @@
 package com.ycjx.server;
 
+import com.ycjx.server.handler.AuthHandler;
 import com.ycjx.server.handler.LoginRequestHandler;
 import com.ycjx.server.handler.MessageRequestHandler;
 import com.ycjx.utils.PacketEncodeCodec;
@@ -42,6 +43,7 @@ public class Server {
                         nioSocketChannel.pipeline().addLast(new LengthFieldBasedFrameDecoder(Integer.MAX_VALUE, 7, 4))
                                 .addLast(new PacketEncodeCodec())
                                 .addLast(new LoginRequestHandler())
+                                .addLast(new AuthHandler())
                                 .addLast(new MessageRequestHandler());
                     }
                 })

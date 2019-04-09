@@ -24,7 +24,7 @@ public class ClientHandler extends ChannelInboundHandlerAdapter {
         System.out.println(new Date() + "：客户端开始登陆");
         LoginRequestPacket loginRequestPacket = new LoginRequestPacket();
 
-        loginRequestPacket.setUserId(8978);
+        loginRequestPacket.setUserId("8978");
         loginRequestPacket.setUsername("ycjx");
         loginRequestPacket.setPassword("yay");
         ByteBuf byteBuf = PacketEncodeCodec.INSTANCE.encode(loginRequestPacket);

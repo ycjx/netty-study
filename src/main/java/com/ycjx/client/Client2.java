@@ -3,12 +3,12 @@ package com.ycjx.client;
 import com.ycjx.bean.MessageRequestPacket;
 import com.ycjx.client.handler.AuthHandler;
 import com.ycjx.client.handler.LoginResponseHandle;
+import com.ycjx.client.handler.LoginResponseHandle2;
 import com.ycjx.client.handler.MessageResponesHandle;
 import com.ycjx.utils.LoginUtil;
 import com.ycjx.utils.PacketEncodeCodec;
 import io.netty.bootstrap.Bootstrap;
 import io.netty.buffer.ByteBuf;
-import io.netty.buffer.ByteBufAllocator;
 import io.netty.channel.Channel;
 import io.netty.channel.ChannelFuture;
 import io.netty.channel.ChannelInitializer;
@@ -17,7 +17,6 @@ import io.netty.channel.nio.NioEventLoopGroup;
 import io.netty.channel.socket.SocketChannel;
 import io.netty.channel.socket.nio.NioSocketChannel;
 
-import java.nio.charset.Charset;
 import java.util.Scanner;
 import java.util.concurrent.TimeUnit;
 
@@ -26,7 +25,7 @@ import java.util.concurrent.TimeUnit;
  * @descriptio
  * @create:2019/2/16 下午5:58
  */
-public class Client {
+public class Client2 {
 
 
     private final static int MAX_RETRY = 1000;
@@ -44,7 +43,7 @@ public class Client {
                     @Override
                     protected void initChannel(SocketChannel socketChannel) {
                         socketChannel.pipeline().addLast(new PacketEncodeCodec())
-                                .addLast(new LoginResponseHandle())
+                                .addLast(new LoginResponseHandle2())
                                 .addLast(new AuthHandler())
                                 .addLast(new MessageResponesHandle());
                     }
@@ -100,7 +99,7 @@ public class Client {
 
 
                     MessageRequestPacket packet = new MessageRequestPacket();
-                    packet.setToUserId("5400");
+                    packet.setToUserId("8978");
                     packet.setMessage(line);
                     ByteBuf byteBuf = PacketEncodeCodec.INSTANCE.encode(packet);
                     channel.writeAndFlush(byteBuf);

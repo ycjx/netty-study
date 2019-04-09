@@ -45,10 +45,6 @@ public class ServerHandler extends ChannelInboundHandlerAdapter {
     }
 
     private boolean vaild(LoginRequestPacket loginRequestPacket){
-        if(loginRequestPacket.getUserId() == 8978 &&
-                "yay".equals(loginRequestPacket.getPassword())){
-            return true;
-        }
-        return false;
+        return true;
     }
 }
